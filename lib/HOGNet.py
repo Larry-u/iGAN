@@ -20,7 +20,7 @@ class HOGNet():
     def def_comp_mask(self):
         BS = self.BS
         print('COMPILING')
-        t = time()
+        t = time()       
         m = T.tensor4()
         bf_w = np.ones((1, 1, 2 * BS, 2 * BS))
         bf = sharedX(floatX(bf_w))

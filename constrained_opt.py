@@ -4,10 +4,11 @@ from lib.rng import np_rng
 import numpy as np
 import sys
 from lib import utils
-from PyQt4.QtCore import *
+from PyQt5.QtCore import *
 
 
 class Constrained_OPT(QThread):
+    update_image = pyqtSignal(int)
     def __init__(self, opt_solver, batch_size=32, n_iters=25, topK=16, morph_steps=16, interp='linear'):
         QThread.__init__(self)
         self.nz = 100
@@ -227,7 +228,8 @@ class Constrained_OPT(QThread):
         cost_weights = cost_all[order]
         self.weights = np.exp(-(cost_weights - np.mean(cost_weights)) / (np.std(cost_weights) + 1e-10))
         self.current_zs = z_t[order]
-        self.emit(SIGNAL('update_image'))
+        self.update_image_msg.emit(0)
+#        self.emit(SIGNAL('update_image'))
 
     def gen_morphing(self, interp='linear', n_steps=8):
         if self.current_ims is None:

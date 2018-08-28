@@ -1,7 +1,7 @@
 import os
 from lib import image_save
 from lib import utils
-from PyQt4 import QtGui
+from PyQt5 import QtGui, QtWidgets
 
 class SaveResult():
     def __init__(self, model_name):
@@ -24,8 +24,8 @@ class SaveResult():
     def save(self):
         # if self.
         if not self.isInit:
-            save_dir = QtGui.QFileDialog.getExistingDirectory(None,
-                'Select a folder to save the result', self.default_dir,QtGui.QFileDialog.ShowDirsOnly)
+            save_dir = QtWidgets.QFileDialog.getExistingDirectory(None,
+                'Select a folder to save the result', self.default_dir,QtWidgets.QFileDialog.ShowDirsOnly)
             self.isInit = True
             self.save_dir = str(save_dir)
             utils.mkdirs(self.save_dir)

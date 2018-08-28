@@ -1,12 +1,15 @@
 import numpy as np
+from PyQt5.QtWidgets import *
 import cv2
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from . import save_result
 from lib import utils
 
 
 class GUI_VIS(QWidget):
+    update_image_id = pyqtSignal()
+
     def __init__(self, opt_engine, topK=16, grid_size=None, nps=320, model_name='tmp'):
         QWidget.__init__(self)
         self.topK = topK
@@ -66,7 +69,7 @@ class GUI_VIS(QWidget):
                 self.select_id = new_id
                 self.update_vis()
                 self.update()
-                self.emit(SIGNAL('update_image_id'), self.select_id)
+                self.update_image_id.emit(self.select_id)
 
     def sizeHint(self):
         return QSize(self.winWidth, self.winHeight)

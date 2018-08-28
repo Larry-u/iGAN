@@ -1,5 +1,6 @@
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
 from . import gui_draw
 from . import gui_vis
 import time
@@ -112,14 +113,14 @@ class GUIDesign(QWidget):
         self.setGeometry(0, 0, mainWidth, mainHeight)
         self.setFixedSize(self.width(), self.height()) # fix window size
         # connect signals and slots
-        self.connect(self.opt_engine, SIGNAL('update_image'), self.drawWidget.update_im)
-        self.connect(self.opt_engine, SIGNAL('update_image'), self.visWidget.update_vis)
-        self.connect(self.visWidget, SIGNAL('update_image_id'), self.drawWidget.set_image_id)
-        self.connect(self.drawWidget, SIGNAL('update_image_id'), self.visWidget.set_image_id)
+        self.opt_engine.update_image.connect(self.drawWidget.update_im)
+        self.opt_engine.update_image.connect(self.visWidget.update_vis)
+        self.visWidget.update_image_id.connect(self.drawWidget.set_image_id)
+        self.drawWidget.update_image_id.connect(self.visWidget.set_image_id)
         self.slider.valueChanged.connect(self.visWidget.set_frame_id)
         self.slider.valueChanged.connect(self.drawWidget.set_frame_id)
-        self.connect(self.drawWidget, SIGNAL('update_frame_id'), self.visWidget.set_frame_id)
-        self.connect(self.drawWidget, SIGNAL('update_frame_id'), self.slider.setValue)
+        self.drawWidget.update_frame_id.connect(self.visWidget.set_frame_id)
+        self.drawWidget.update_frame_id.connect(self.slider.setValue)
         self.opt_engine.start()
         self.drawWidget.update()
         self.visWidget.update()
@@ -127,7 +128,7 @@ class GUIDesign(QWidget):
         self.bEdge.toggled.connect(self.drawWidget.use_edge)
         self.bWarp.toggled.connect(self.drawWidget.use_warp)
         self.colorPush.clicked.connect(self.drawWidget.change_color)
-        self.connect(self.drawWidget, SIGNAL('update_color'), self.colorPush.setStyleSheet)
+        self.drawWidget.update_color.connect(self.colorPush.setStyleSheet)
         self.bPlay.clicked.connect(self.play)
         self.bFix.clicked.connect(self.fix)
         self.bRestart.clicked.connect(self.reset)

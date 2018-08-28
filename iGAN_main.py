@@ -1,19 +1,22 @@
 from __future__ import print_function
 import sys
+from PyQt5.QtWidgets import *
 import argparse
 import qdarkstyle
-from PyQt4.QtGui import QApplication, QIcon
-from PyQt4.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 from ui import gui_design
 from pydoc import locate
 import constrained_opt
 
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='iGAN: Interactive Visual Synthesis Powered by GAN')
     parser.add_argument('--model_name', dest='model_name', help='the model name', default='outdoor_64', type=str)
-    parser.add_argument('--model_type', dest='model_type', help='the generative models and its deep learning framework', default='dcgan_theano', type=str)
-    parser.add_argument('--framework', dest='framework', help='deep learning framework', default='theano')
+    parser.add_argument('--model_type', dest='model_type', help='the generative models and its deep learning framework', default='dcgan_pytorch', type=str)
+    parser.add_argument('--framework', dest='framework', help='deep learning framework', default='pytorch')
     parser.add_argument('--win_size', dest='win_size', help='the size of the main window', type=int, default=384)
     parser.add_argument('--batch_size', dest='batch_size', help='the number of random initializations', type=int, default=64)
     parser.add_argument('--n_iters', dest='n_iters', help='the number of total optimization iterations', type=int, default=40)
@@ -51,7 +54,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = gui_design.GUIDesign(opt_engine, win_size=args.win_size, img_size=img_size, topK=args.top_k,
                                   model_name=args.model_name, useAverage=args.average, shadow=args.shadow)
-    app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))  # comment this if you do not like dark stylesheet
+    # app.setStyleSheet(qdarkstyle.load_stylesheet(pyside=False))  # comment this if you do not like dark stylesheet
     app.setWindowIcon(QIcon('pics/logo.png'))  # load logo
     window.setWindowTitle('Interactive GAN')
     window.setWindowFlags(window.windowFlags() & ~Qt.WindowMaximizeButtonHint)   # fix window siz

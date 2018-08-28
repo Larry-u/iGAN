@@ -1,8 +1,9 @@
 import numpy as np
+from PyQt5.QtWidgets import *
 import time
 import cv2
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from lib import utils
 # from scipy import ndimage
 from .ui_recorder import UIRecorder
@@ -10,7 +11,13 @@ from .ui_color import UIColor
 from .ui_sketch import UISketch
 from .ui_warp import UIWarp
 
+QString = str
+
 class GUIDraw(QWidget):
+    update_image_id = pyqtSignal(int)
+    update_color = pyqtSignal()
+    update_frame_id = pyqtSignal()
+
     def __init__(self, opt_engine, win_size=320, img_size=64, topK=16, useAverage=False, shadow=False):
         QWidget.__init__(self)
         self.isPressed = False
@@ -67,7 +74,7 @@ class GUIDraw(QWidget):
         if self.opt_engine.is_fixed():
             self.set_frame_id(-1)
             self.set_image_id(0)
-            self.emit(SIGNAL('update_image_id'), 0)
+            self.update_image_id.emit(0)
             self.opt_engine.update_fix()
         if self.type is 'color':
             self.uiColor.update(self.points, self.color)
@@ -124,7 +131,7 @@ class GUIDraw(QWidget):
             self.color = color
 
         self.prev_color = self.color
-        self.emit(SIGNAL('update_color'), QString('background-color: %s' % self.color.name()))
+        self.update_color.emit(QString('background-color: %s' % self.color.name()))
 
 
     def get_image_id(self):
@@ -247,7 +254,7 @@ class GUIDraw(QWidget):
             painter.drawText(QPoint(border, 2 * fontSz + border), QString(msg))
 
     def wheelEvent(self, event):
-        d = event.delta() / 120
+        d = event.angleDelta().y() / 120
         if self.type is 'edge':
             self.brushWidth = self.uiSketch.update_width(d, self.color)
         if self.type is 'color':
@@ -322,7 +329,7 @@ class GUIDraw(QWidget):
             QApplication.processEvents()
             fps = 10
             time.sleep(1/float(fps))
-            self.emit(SIGNAL('update_frame_id'),self.frame_id)
+            self.update_frame_id.emit(self.frame_id)
             if n < num_frames-1: # stop at last frame
                 self.update_frame(1)
 
@@ -330,7 +337,7 @@ class GUIDraw(QWidget):
         print('coloring')
         self.type = 'color'
         self.color = self.prev_color
-        self.emit(SIGNAL('update_color'), QString('background-color: %s' % self.color.name()))
+        self.update_color.emit(QString('background-color: %s' % self.color.name()))
         self.brushWidth = self.uiColor.update_width(0)
         self.update()
 
@@ -338,14 +345,14 @@ class GUIDraw(QWidget):
         print('sketching')
         self.type = 'edge'
         self.color = QColor(0, 0, 0) if self.shadow else QColor(128, 128, 128)
-        self.emit(SIGNAL('update_color'), QString('background-color: %s' % self.color.name()))
+        self.update_color.emit(QString('background-color: %s' % self.color.name()))
         self.brushWidth = self.uiSketch.update_width(0, self.color)
         self.update()
 
     def use_warp(self):
         self.type = 'warp'
         self.color = QColor(128, 128, 128)
-        self.emit(SIGNAL('update_color'), QString('background-color: %s' % self.color.name()))
+        self.update_color.emit(QString('background-color: %s' % self.color.name()))
         self.brushWidth = self.uiWarp.update_width(0)
         print('warp brush: %d' % self.brushWidth)
         self.update()
