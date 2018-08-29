@@ -11,7 +11,7 @@ class Constrained_OPT(QThread):
     update_image = pyqtSignal(int)
     def __init__(self, opt_solver, batch_size=32, n_iters=25, topK=16, morph_steps=16, interp='linear'):
         QThread.__init__(self)
-        self.nz = 100
+        self.nz = 512
         self.opt_solver = opt_solver
         self.topK = topK
         self.max_iters = n_iters
@@ -228,7 +228,7 @@ class Constrained_OPT(QThread):
         cost_weights = cost_all[order]
         self.weights = np.exp(-(cost_weights - np.mean(cost_weights)) / (np.std(cost_weights) + 1e-10))
         self.current_zs = z_t[order]
-        self.update_image_msg.emit(0)
+        self.update_image.emit(0)
 #        self.emit(SIGNAL('update_image'))
 
     def gen_morphing(self, interp='linear', n_steps=8):

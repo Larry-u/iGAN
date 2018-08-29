@@ -15,8 +15,8 @@ QString = str
 
 class GUIDraw(QWidget):
     update_image_id = pyqtSignal(int)
-    update_color = pyqtSignal()
-    update_frame_id = pyqtSignal()
+    update_color = pyqtSignal(str)
+    update_frame_id = pyqtSignal(int)
 
     def __init__(self, opt_engine, win_size=320, img_size=64, topK=16, useAverage=False, shadow=False):
         QWidget.__init__(self)

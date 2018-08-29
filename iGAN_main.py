@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument('--model_type', dest='model_type', help='the generative models and its deep learning framework', default='dcgan_pytorch', type=str)
     parser.add_argument('--framework', dest='framework', help='deep learning framework', default='pytorch')
     parser.add_argument('--win_size', dest='win_size', help='the size of the main window', type=int, default=384)
-    parser.add_argument('--batch_size', dest='batch_size', help='the number of random initializations', type=int, default=64)
+    parser.add_argument('--batch_size', dest='batch_size', help='the number of random initializations', type=int, default=4)
     parser.add_argument('--n_iters', dest='n_iters', help='the number of total optimization iterations', type=int, default=40)
     parser.add_argument('--top_k', dest='top_k', help='the number of the thumbnail results being displayed', type=int, default=16)
     parser.add_argument('--morph_steps', dest='morph_steps', help='the number of intermediate frames of morphing sequence', type=int, default=16)

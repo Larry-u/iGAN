@@ -8,7 +8,7 @@ from lib import utils
 
 
 class GUI_VIS(QWidget):
-    update_image_id = pyqtSignal()
+    update_image_id = pyqtSignal(int)
 
     def __init__(self, opt_engine, topK=16, grid_size=None, nps=320, model_name='tmp'):
         QWidget.__init__(self)

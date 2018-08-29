@@ -4,9 +4,9 @@ from lib import HOGNet_pytorch
 import numpy as np
 from torch.optim import Adam
 from torch import nn
-
+from tqdm import tqdm
 class OPT_Solver():
-    def __init__(self, model, batch_size=32, d_weight=0.0):
+    def __init__(self, model, batch_size=8, d_weight=0.0):
         self.model = model
         self.npx = model.npx
         self.nc = model.nc
@@ -31,14 +31,15 @@ class OPT_Solver():
         results = _invert(im_c_t, mask_c_t, im_e_t, mask_e_t, z_i.astype(np.float32))
 
         [gx, cost, cost_all, rec_all, real_all, init_all, sum_e, sum_x_edge] = results
-        gx_t = self.model.model_G(self.z_param, img= True)
-        if self.nc == 1:
-            gx_t = np.tile(gx_t, (1, 1, 1, 3))
-        z_t = np.tanh(z.get_value()).copy()
-        return gx_t, z_t, cost_all
+        with torch.no_grad():
+            gx_t = self.model._gen(self.z_param, img= True)
+            if self.nc == 1:
+                gx_t = np.tile(gx_t, (1, 1, 1, 3))
+            z_t = np.tanh(z.cpu().numpy()).copy()
+        return gx_t, z_t, cost_all.detach().cpu().numpy()
 
     def preprocess_constraints(self, constraints):
-        [im_c_o, mask_c_o, im_e_o, mask_e_o] = map(torch.Tensor,constraints)
+        im_c_o, mask_c_o, im_e_o, mask_e_o = map(torch.Tensor,constraints)
 
         im_c = self.transform(im_c_o.unsqueeze(0), self.nc)
         mask_c = self.transform_mask(mask_c_o.unsqueeze(0))
@@ -53,10 +54,10 @@ class OPT_Solver():
         return [im_c_t, mask_c_t, im_e_t, mask_e_t]
 
     def initialize(self, z0):
-        self.z_param.data = torch.Tensor(np.arctanh(z0))
+        self.z_param.data = torch.Tensor(np.arctanh(z0)).cuda()
 
     def set_smoothness(self, l):
-        self.z_const = torch.Tensor([l])
+        self.z_const = torch.Tensor([l]).cuda()
 
     def gen_samples(self, z0):
         samples = self.model.gen_samples(z0=z0)
@@ -66,20 +67,35 @@ class OPT_Solver():
 
     def def_invert(self, model, batch_size=1, d_weight=0.0, nc=1, lr=0.1, b1=0.9, use_bin=True):
         assert d_weight == 0
-        z = torch.FloatTensor(batch_size, model.nz).uniform_(-1, 1) #2 * torch.rand(n, self.nz) - 1
+        z = torch.FloatTensor(batch_size, self.nz).uniform_(-1, 1).cuda() #2 * torch.rand(n, self.nz) - 1
+        print(f'z : {z.shape}')
+
         self.z_param = nn.Parameter(z)
-        self.z_const = torch.Tensor([5])
+        self.z_const = torch.Tensor([5]).cuda()
     
         self.adam = Adam([self.z_param], lr=lr, betas=(b1, 0.999))
         def _invert(x_c, m_c, x_e, m_e, z0):
-            for i in range(500):
+            x_c = x_c.cuda()
+            m_c = m_c.cuda()
+            x_e = x_e.cuda()
+            m_e = m_e.cuda()
+            # print(f'm_e : {m_e}')
+            z0  = torch.Tensor(z0).cuda()
+
+            for i in range(1):
                 self.adam.zero_grad()
-                gx = model.model_G(self.z_param)
+                # print(f'self.z_param : {self.z_param.shape}')
+                gx = model.model_G(self.z_param.cuda())
+                _gx = torch.zeros_like(gx)
+                for i in range(gx.shape[0]):
+                    _gx[i] = gx[i] - gx[i].min() 
+                    _gx[i] = gx[i] / gx[i].max() * 2 - 1 
                 if nc == 1:  # gx, range [0, 1] => edge, 1
-                    gx3 = 1.0 - gx  # T.tile(gx, (1, 3, 1, 1))
+                    gx3 = 1.0 - _gx  # T.tile(gx, (1, 3, 1, 1))
                 else:
-                    gx3 = gx
+                    gx3 = _gx
                 mm_c = m_c.expand(-1, gx3.shape[1], -1, -1)
+                # print(f'x_c.min(), x_c.max() : {x_c.min(), x_c.max()}')
                 color_all = ((gx3 - x_c)**2 * mm_c).mean(-1).mean(-1).mean(-1) / (m_c.mean(-1).mean(-1).mean(-1) + 1e-5)
                 gx_edge = self.hog.get_hog(gx3)
                 x_edge = self.hog.get_hog(x_e)
@@ -94,5 +110,6 @@ class OPT_Solver():
                 cost.backward()
                 self.adam.step()
             real_all = torch.zeros_like(cost_all)
-            return gx, cost, cost_all, rec_all, real_all, init_all, sum_e, sum_x_edge
+            with torch.no_grad():
+                return gx, cost, cost_all, rec_all, real_all, init_all, sum_e, sum_x_edge
         return [_invert, self.z_param, torch.Tensor([0]), self.z_const]

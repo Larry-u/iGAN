@@ -10,11 +10,12 @@ class Model(object):
         self._gen = Generator()
         generator_path = '/home/toby/Documents/HCIGAN/data/network-final.pth'
         self._gen.load_state_dict(torch.load(generator_path))
+        self._gen.cuda()
         self.npx = 1024 # width = height = 1024px
         self.nc = 3 # 3 channels
 
     def model_G(self, z):  # generative model z => x
-        return self._gen(z, img=True)
+        return self._gen(z)
 
     def gen_samples(self, z0=None, n=32, batch_size=32, use_transform=True):
         assert n % batch_size == 0
