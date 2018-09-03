@@ -229,7 +229,7 @@ class Constrained_OPT(QThread):
         self.weights = np.exp(-(cost_weights - np.mean(cost_weights)) / (np.std(cost_weights) + 1e-10))
         self.current_zs = z_t[order]
         self.update_image.emit(0)
-#        self.emit(SIGNAL('update_image'))
+
 
     def gen_morphing(self, interp='linear', n_steps=8):
         if self.current_ims is None:

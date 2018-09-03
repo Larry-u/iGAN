@@ -65,12 +65,12 @@ class OPT_Solver():
             samples = np.tile(samples, [1, 1, 1, 3])
         return samples
 
-    def def_invert(self, model, batch_size=1, d_weight=0.0, nc=1, lr=0.1, b1=0.9, use_bin=True):
-        assert d_weight == 0
+    def def_invert(self, model, batch_size=1, d_weight=0.0, nc=1, lr=0.1, b1=0.9, use_bin=True,  divided_batch_size=4):
+        assert d_weight == 0, 'discriminator is not support in PyTorch now'
         z = torch.FloatTensor(batch_size, self.nz).uniform_(-1, 1).cuda() #2 * torch.rand(n, self.nz) - 1
-        print(f'z : {z.shape}')
+        # print(f'z : {z.shape}')
 
-        self.z_param = nn.Parameter(z)
+        self.z_param = nn.Parameter(z).cuda()
         self.z_const = torch.Tensor([5]).cuda()
     
         self.adam = Adam([self.z_param], lr=lr, betas=(b1, 0.999))
@@ -79,13 +79,29 @@ class OPT_Solver():
             m_c = m_c.cuda()
             x_e = x_e.cuda()
             m_e = m_e.cuda()
-            # print(f'm_e : {m_e}')
-            z0  = torch.Tensor(z0).cuda()
 
-            for i in range(1):
+            z0  = torch.Tensor(z0).cuda()
+            n_batches = int(np.ceil(batch_size / divided_batch_size))
+            gx_list = []
+            cost_list = []
+            cost_all_list = []
+            rec_all_list = []
+            real_all_list = []
+            init_all_list = []
+            sum_e_list = []
+            sum_x_edge_list = []  
+            # print(f'n_batches : {n_batches}')
+            for i in range(n_batches):
                 self.adam.zero_grad()
+                z_param = self.z_param[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+                _x_c = x_c[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+                _m_c = m_c[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+                _x_e = x_e[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+                _m_e = m_e[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+                _z0 = z0[divided_batch_size * i:min(batch_size, divided_batch_size * (i + 1))]
+
                 # print(f'self.z_param : {self.z_param.shape}')
-                gx = model.model_G(self.z_param.cuda())
+                gx = model.model_G(z_param)
                 _gx = torch.zeros_like(gx)
                 for i in range(gx.shape[0]):
                     _gx[i] = gx[i] - gx[i].min() 
@@ -94,22 +110,64 @@ class OPT_Solver():
                     gx3 = 1.0 - _gx  # T.tile(gx, (1, 3, 1, 1))
                 else:
                     gx3 = _gx
-                mm_c = m_c.expand(-1, gx3.shape[1], -1, -1)
+                mm_c = _m_c.expand(-1, gx3.shape[1], -1, -1)
                 # print(f'x_c.min(), x_c.max() : {x_c.min(), x_c.max()}')
-                color_all = ((gx3 - x_c)**2 * mm_c).mean(-1).mean(-1).mean(-1) / (m_c.mean(-1).mean(-1).mean(-1) + 1e-5)
+                color_all = ((gx3 - _x_c)**2 * mm_c).mean(-1).mean(-1).mean(-1) / (_m_c.mean(-1).mean(-1).mean(-1) + 1e-5)
                 gx_edge = self.hog.get_hog(gx3)
-                x_edge = self.hog.get_hog(x_e)
-                mm_e = m_e.expand(-1, gx_edge.shape[1], -1, -1)
+                x_edge = self.hog.get_hog(_x_e)
+                mm_e = _m_e.expand(-1, gx_edge.shape[1], -1, -1)
                 sum_e = mm_e.abs().sum()
                 sum_x_edge = x_edge.abs().sum()
-                edge_all = ((x_edge - gx_edge)**2 * mm_e).mean(-1).mean(-1).mean(-1) / (m_e.mean(-1).mean(-1).mean(-1) + 1e-5)
+                edge_all = ((x_edge - gx_edge)**2 * mm_e).mean(-1).mean(-1).mean(-1) / (_m_e.mean(-1).mean(-1).mean(-1) + 1e-5)
                 rec_all = color_all + edge_all * 0.2
-                init_all = ((z0 - self.z_param)**2).mean() * self.z_const
+                init_all = ((_z0 - z_param)**2).mean() * self.z_const
                 cost_all = rec_all + init_all
                 cost = cost_all.sum()
+                real_all = torch.zeros_like(cost_all)
+                gx_list.append(gx.detach().clone())
+                cost_list.append(cost.detach().clone())
+                cost_all_list.append(cost_all.detach().clone())
+                rec_all_list.append(rec_all.detach().clone())
+                real_all_list.append(real_all.detach().clone())
+                init_all_list.append(init_all.detach().clone())
+                sum_e_list.append(sum_e.detach().clone())
+                sum_x_edge_list.append(sum_x_edge.detach().clone())
+                # print(f'gx_list : {gx_list[-1]}')
+                # print(f'cost_list : {cost_list[-1]}')
+                # print(f'cost_all_list : {cost_all_list[-1]}')
+                # print(f'rec_all_list : {rec_all_list[-1]}')
+                # print(f'real_all_list : {real_all_list[-1]}')
+                # print(f'init_all_list : {init_all_list[-1]}')
+                # print(f'sum_e_list : {sum_e_list[-1]}')
+                # print(f'sum_x_edge_list : {sum_x_edge_list[-1]}')
+    
                 cost.backward()
                 self.adam.step()
-            real_all = torch.zeros_like(cost_all)
+
             with torch.no_grad():
+                # print(f'gx_list : {gx_list}')
+                # print(f'cost_list : {cost_list}')
+                # print(f'cost_all_list : {cost_all_list}')
+                # print(f'rec_all_list : {rec_all_list}')
+                # print(f'real_all_list : {real_all_list}')
+                # print(f'init_all_list : {init_all_list}')
+                # print(f'sum_e_list : {sum_e_list}')
+                # print(f'sum_x_edge_list : {sum_x_edge_list}')
+                gx = torch.cat(gx_list, dim=0) 
+                cost = torch.stack(cost_list, dim=0) 
+                cost_all = torch.cat(cost_all_list, dim=0) 
+                rec_all = torch.cat(rec_all_list, dim=0) 
+                real_all = torch.cat(real_all_list, dim=0) 
+                init_all = torch.cat(init_all_list, dim=0) 
+                sum_e = torch.stack(sum_e_list, dim=0) 
+                sum_x_edge = torch.stack(sum_x_edge_list, dim=0)  
+                # print(f'cost : {cost.shape}')
+                # # print(f'cost_all : {cost_all.shape}')
+                # print(f'rec_all : {rec_all.shape}')
+                # print(f'real_all : {real_all.shape}')
+                # print(f'init_all : {init_all.shape}')
+                # print(f'sum_e : {sum_e.shape}')
+                # # print(f'sum_x_edge : {sum_x_edge.shape}')
+
                 return gx, cost, cost_all, rec_all, real_all, init_all, sum_e, sum_x_edge
         return [_invert, self.z_param, torch.Tensor([0]), self.z_const]

@@ -21,7 +21,7 @@ class HOGNet():
         t = time()     
         mask = torch.Tensor(mask)  
         bf = torch.ones([1, 1, 2 * BS, 2 * BS])
-        m_b = F.conv2d(mask, bf, padding=(BS / 2, BS / 2), stride=BS)
+        m_b = F.conv2d(mask, bf, padding=(BS // 2, BS // 2), stride=BS)
         return m_b
 
     def comp_mask(self, _masks):
@@ -79,7 +79,7 @@ class HOGNet():
                 bf_w[n, n] = bb
 
             bf = bf_w.cuda()
-            h_f = F.conv2d(hk, bf, padding=(BS / 2, BS / 2), stride=BS)
+            h_f = F.conv2d(hk, bf, padding=(BS // 2, BS // 2), stride=BS)
             return h_f
         else:
             return g
