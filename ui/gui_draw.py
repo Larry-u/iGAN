@@ -36,6 +36,7 @@ class GUIDraw(QWidget):
         self.show_nn = True
         self.type = 'edge' if self.shadow else 'color'
         self.show_ui = True
+        self.show_image_flag = True
         self.uir = UIRecorder(shadow=shadow)
         nc = 1 if shadow else 3
         self.uiColor = UIColor(img_size=img_size, scale=self.scale, nc=nc)
@@ -171,7 +172,7 @@ class GUIDraw(QWidget):
         if self.shadow and self.useAverage:
             im = self.shadow_image(im, self.pos)
 
-        if im is not None:
+        if im is not None and self.show_image_flag:
             bigim = cv2.resize(im, (self.nps, self.nps))
             qImg = QImage(bigim.tostring(), self.nps, self.nps, QImage.Format_RGB888)
             painter.drawImage(0, 0, qImg)
@@ -360,5 +361,9 @@ class GUIDraw(QWidget):
 
     def show_edits(self):
         self.show_ui = not self.show_ui
+        self.update()
+
+    def show_image(self):
+        self.show_image_flag = not self.show_image_flag
         self.update()
 

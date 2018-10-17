@@ -56,6 +56,8 @@ class GUIDesign(QWidget):
 
         self.bEdit = QCheckBox('&Edits')
         self.bEdit.setChecked(True)
+        self.bImage = QCheckBox('&Image')
+        self.bImage.setChecked(True)
         # self.bAverage = QCheckBox('&AE')
         # self.bAverage.setChecked(useAverage)
         self.colorPush  = QPushButton()  # to visualize the selected color
@@ -67,6 +69,7 @@ class GUIDesign(QWidget):
             self.colorPush.setStyleSheet("background-color: green")
         bhbox.addWidget(self.colorPush)
         bhbox.addWidget(self.bEdit)
+        bhbox.addWidget(self.bImage)
         # bhbox.addWidget(self.bAverage)
 
 
@@ -134,6 +137,7 @@ class GUIDesign(QWidget):
         self.bRestart.clicked.connect(self.reset)
         self.bSave.clicked.connect(self.save)
         self.bEdit.toggled.connect(self.show_edits)
+        self.bImage.toggled.connect(self.show_image)
         # self.bAverage.toggled.connect(self.drawWidget.change_average_mode)
         self.start_t = time.time()
 
@@ -152,6 +156,9 @@ class GUIDesign(QWidget):
 
     def show_edits(self):
         self.drawWidget.show_edits()
+
+    def show_image(self):
+        self.drawWidget.show_image()
 
     def save(self):
         print('time spent = %3.3f' % (time.time()-self.start_t))

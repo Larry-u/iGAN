@@ -6,7 +6,7 @@ from torch.optim import Adam
 from torch import nn
 from tqdm import tqdm
 class OPT_Solver():
-    def __init__(self, model, batch_size=8, d_weight=0.0):
+    def __init__(self, model, batch_size=8, d_weight=0.0, divided_batch_size=1):
         self.model = model
         self.npx = model.npx
         self.nc = model.nc
@@ -17,7 +17,7 @@ class OPT_Solver():
         self.inverse_transform = model.inverse_transform
         BS = 4 if self.nc == 1 else 8  # [hack]
         self.hog = HOGNet_pytorch.HOGNet(use_bin=True, NO=8, BS=BS, nc=self.nc)
-        self.opt_model = self.def_invert(model, batch_size=batch_size, d_weight=d_weight, nc=self.nc)
+        self.opt_model = self.def_invert(model, batch_size=batch_size, d_weight=d_weight, nc=self.nc, divided_batch_size=divided_batch_size)
         self.batch_size = batch_size
 
     def get_image_size(self):
@@ -65,7 +65,7 @@ class OPT_Solver():
             samples = np.tile(samples, [1, 1, 1, 3])
         return samples
 
-    def def_invert(self, model, batch_size=1, d_weight=0.0, nc=1, lr=0.1, b1=0.9, use_bin=True,  divided_batch_size=4):
+    def def_invert(self, model, batch_size=1, d_weight=0.0, nc=1, lr=0.1, b1=0.9, use_bin=True,  divided_batch_size=2):
         assert d_weight == 0, 'discriminator is not support in PyTorch now'
         z = torch.FloatTensor(batch_size, self.nz).uniform_(-1, 1).cuda() #2 * torch.rand(n, self.nz) - 1
         # print(f'z : {z.shape}')

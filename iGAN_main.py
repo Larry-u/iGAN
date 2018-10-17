@@ -19,6 +19,7 @@ def parse_args():
     parser.add_argument('--framework', dest='framework', help='deep learning framework', default='pytorch')
     parser.add_argument('--win_size', dest='win_size', help='the size of the main window', type=int, default=384)
     parser.add_argument('--batch_size', dest='batch_size', help='the number of random initializations', type=int, default=16)
+    parser.add_argument('--mini_batch_size', dest='mini_batch_size', help='further divid each batch to mini-batch that fit in GPU', type=int, default=1)
     parser.add_argument('--n_iters', dest='n_iters', help='the number of total optimization iterations', type=int, default=40)
     parser.add_argument('--top_k', dest='top_k', help='the number of the thumbnail results being displayed', type=int, default=16)
     parser.add_argument('--morph_steps', dest='morph_steps', help='the number of intermediate frames of morphing sequence', type=int, default=16)
@@ -45,7 +46,7 @@ if __name__ == '__main__':
     model_class = locate('model_def.%s' % args.model_type)
     model = model_class.Model(model_name=args.model_name, model_file=args.model_file)
     opt_class = locate('constrained_opt_%s' % args.framework)
-    opt_solver = opt_class.OPT_Solver(model, batch_size=args.batch_size, d_weight=args.d_weight)
+    opt_solver = opt_class.OPT_Solver(model, batch_size=args.batch_size, d_weight=args.d_weight, divided_batch_size=args.mini_batch_size)
     img_size = opt_solver.get_image_size()
     opt_engine = constrained_opt.Constrained_OPT(opt_solver, batch_size=args.batch_size, n_iters=args.n_iters, topK=args.top_k,
                                                  morph_steps=args.morph_steps, interp=args.interp)
