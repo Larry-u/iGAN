@@ -2,15 +2,12 @@ from __future__ import print_function
 import sys
 from PyQt5.QtWidgets import *
 import argparse
-import qdarkstyle
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 from ui import gui_design
 from pydoc import locate
 import constrained_opt
-
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description='iGAN: Interactive Visual Synthesis Powered by GAN')
